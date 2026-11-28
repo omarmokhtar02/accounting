@@ -1,21 +1,22 @@
-# Local development stack: PostgreSQL + Redis + Mailpit. Run the app itself with `composer run dev`
+# Local development stack: MySQL + Redis + Mailpit. Run the app itself with `composer run dev`
 # (or uncomment the app services). Usage: docker compose up -d
 services:
-  postgres:
-    image: postgres:16-alpine
+  mysql:
+    image: mysql:8.4
     environment:
-      POSTGRES_DB: accounting
-      POSTGRES_USER: accounting
-      POSTGRES_PASSWORD: secret
+      MYSQL_DATABASE: accounting
+      MYSQL_USER: accounting
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - mysqldata:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U accounting -d accounting"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-psecret"]
       interval: 5s
       timeout: 3s
-      retries: 10
+      retries: 20
 
   redis:
     image: redis:7-alpine
@@ -32,5 +33,5 @@ services:
       - "1025:1025"
 
 volumes:
-  pgdata:
+  mysqldata:
   redisdata:

@@ -16,9 +16,9 @@ FROM php:8.3-fpm-alpine AS base
 ARG UID=1000
 ARG GID=1000
 
-RUN apk add --no-cache libpq icu-libs libzip oniguruma fcgi supervisor \
-    && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS postgresql-dev icu-dev libzip-dev oniguruma-dev linux-headers \
-    && docker-php-ext-install -j"$(nproc)" pdo_mysql pdo_pgsql intl bcmath pcntl opcache zip \
+RUN apk add --no-cache icu-libs libzip oniguruma fcgi supervisor \
+    && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS icu-dev libzip-dev oniguruma-dev linux-headers \
+    && docker-php-ext-install -j"$(nproc)" pdo_mysql intl bcmath pcntl opcache zip \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && apk del .build-deps \

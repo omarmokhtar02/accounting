@@ -41,6 +41,7 @@ it('falls back to the seeder credentials in the local environment', function () 
     app()->detectEnvironment(fn () => 'local');
 
     $this->seed(PlatformAdminSeeder::class);
+    app()->detectEnvironment(fn () => 'testing');
 
     $this->post(route('platform.login.store'), ['email' => PlatformAdminSeeder::LOCAL_EMAIL, 'password' => PlatformAdminSeeder::LOCAL_PASSWORD])
         ->assertRedirect();
