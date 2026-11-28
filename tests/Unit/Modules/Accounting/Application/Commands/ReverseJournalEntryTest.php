@@ -27,7 +27,7 @@ it('creates a posted, linked, opposite entry and keeps the original lines', func
         ->and($reversal->status)->toBe(JournalStatus::Posted)
         ->and($reversal->number)->toBe('JV-2026-000002')
         ->and($reversal->currency)->toBe($this->original->currency)
-        ->and($this->original->lines()->sum('debit'))->toBe(12345);
+        ->and((int) $this->original->lines()->sum('debit'))->toBe(12345);
 
     foreach ($this->original->lines as $line) {
         $mirror = $reversal->lines()->where('account_id', $line->account_id)->first();

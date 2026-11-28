@@ -10,27 +10,31 @@ COPY resources ./resources
 COPY Modules ./Modules
 RUN npm run build
 
-# ---- Stage 2: PHP dependencies ---------------------------------------------------------------
-FROM composer:2 AS vendor
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-interaction
-COPY . .
-RUN composer dump-autoload --no-dev --classmap-authoritative --no-interaction
-
-# ---- Stage 3: runtime --------------------------------------------------------------------------
-FROM php:8.3-fpm-alpine AS runtime
+# ---- Stage 2: PHP base, shared so dependencies are resolved on the PHP that runs them --------
+FROM php:8.3-fpm-alpine AS base
 
 ARG UID=1000
 ARG GID=1000
 
 RUN apk add --no-cache libpq icu-libs libzip oniguruma fcgi supervisor \
     && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS postgresql-dev icu-dev libzip-dev oniguruma-dev linux-headers \
-    && docker-php-ext-install -j"$(nproc)" pdo_pgsql intl bcmath pcntl opcache zip \
+    && docker-php-ext-install -j"$(nproc)" pdo_mysql pdo_pgsql intl bcmath pcntl opcache zip \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && apk del .build-deps \
     && addgroup -g ${GID} appuser && adduser -D -u ${UID} -G appuser appuser
+
+# ---- Stage 3: PHP dependencies ---------------------------------------------------------------
+FROM base AS vendor
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-interaction
+COPY . .
+RUN composer dump-autoload --no-dev --classmap-authoritative --no-interaction
+
+# ---- Stage 4: runtime --------------------------------------------------------------------------
+FROM base AS runtime
 
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/zz-app.ini
 COPY docker/php/www.conf /usr/local/etc/php-fpm.d/zz-www.conf

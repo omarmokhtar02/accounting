@@ -3,6 +3,7 @@
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Modules\Accounting\Application\AccountRoleResolver;
 use Modules\Accounting\Application\Commands\CreateJournalEntry;
@@ -74,6 +75,9 @@ expect()->extend('toBeOne', function () {
  */
 function bootstrapTenant(string $email = 'owner@example.com', string $name = 'Acme', string $country = 'EG'): array
 {
+    // A prior actingAsAdmin() leaves 'admin' as the default guard, which would audit the admin's id as a user id.
+    Auth::shouldUse('web');
+
     $user = app(RegisterTenant::class)->handle(
         'Owner', $email, Hash::make('password'), $name, $country, 'en',
     );

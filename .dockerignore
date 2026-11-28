@@ -14,6 +14,7 @@ storage/framework/views/*
 public/build
 public/hot
 database/database.sqlite
+bootstrap/cache/*.php
 tests
 *.md
 docker-compose*.yml

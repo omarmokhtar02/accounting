@@ -9,15 +9,21 @@ use Modules\Platform\Domain\Models\AdminUser;
 
 /**
  * Creates the first platform super admin from PLATFORM_ADMIN_EMAIL / PLATFORM_ADMIN_PASSWORD.
- * Safe to run on every deploy: it skips when the variables are empty or the admin already exists,
- * and it never changes an existing admin's password.
+ * In the local environment the constants below fill in for unset variables; other environments
+ * have no default credentials. Safe to run on every deploy: it skips when the credentials are empty
+ * or the admin already exists, and it never changes an existing admin's password.
  */
 class PlatformAdminSeeder extends Seeder
 {
+    public const LOCAL_EMAIL = 'admin@example.com';
+
+    public const LOCAL_PASSWORD = 'Admin@123456';
+
     public function run(SaveAdminUser $save): void
     {
-        $email = strtolower((string) config('platform.admin.email'));
-        $password = (string) config('platform.admin.password');
+        $isLocal = app()->environment('local');
+        $email = strtolower((string) (config('platform.admin.email') ?: ($isLocal ? self::LOCAL_EMAIL : '')));
+        $password = (string) (config('platform.admin.password') ?: ($isLocal ? self::LOCAL_PASSWORD : ''));
 
         if ($email === '' || $password === '') {
             $this->command?->warn('PlatformAdminSeeder skipped: set PLATFORM_ADMIN_EMAIL and PLATFORM_ADMIN_PASSWORD (12+ characters).');

@@ -11,7 +11,7 @@ mkdir -p "$STATE_DIR"
 PREVIOUS_TAG="$(cat "$STATE_DIR/current_tag" 2>/dev/null || echo "")"
 
 echo "==> Backing up the database"
-./scripts/db_backup.sh
+bash ./scripts/db_backup.sh
 
 echo "==> Pulling images for $TAG"
 IMAGE_TAG="$TAG" $COMPOSE pull

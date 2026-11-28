@@ -36,6 +36,17 @@ it('does nothing without an email and password', function (?string $email, ?stri
     expect(AdminUser::count())->toBe(0);
 })->with([[null, null], ['boss@example.com', null], [null, 'a-long-secret-123'], ['', '']]);
 
+it('falls back to the seeder credentials in the local environment', function () {
+    configureAdmin(null, null);
+    app()->detectEnvironment(fn () => 'local');
+
+    $this->seed(PlatformAdminSeeder::class);
+
+    $this->post(route('platform.login.store'), ['email' => PlatformAdminSeeder::LOCAL_EMAIL, 'password' => PlatformAdminSeeder::LOCAL_PASSWORD])
+        ->assertRedirect();
+    $this->assertAuthenticated('admin');
+});
+
 it('can run again without changing the existing admin', function () {
     configureAdmin('boss@example.com', 'a-long-secret-123');
     $this->seed(PlatformAdminSeeder::class);
