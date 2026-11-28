@@ -19,13 +19,20 @@ jobs:
         with:
           php-version: '8.3'
           tools: composer
+      - name: Composer cache directory
+        id: composer
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
       - run: composer install --no-interaction --prefer-dist
       - run: vendor/bin/pint --test
       - run: composer validate --strict
 
   test:
     runs-on: ubuntu-latest
-    needs: lint
     services:
       mysql:
         image: mysql:8.4
@@ -53,6 +60,14 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      - name: Composer cache directory
+        id: composer
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
       - run: composer install --no-interaction --prefer-dist
       - run: npm ci && npm run build
       - run: cp .env.example .env && php artisan key:generate
@@ -61,8 +76,12 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    needs: test
+    needs: [lint, test]
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    # Both images build in parallel; each leg has its own layer cache scope.
+    strategy:
+      matrix:
+        image: [php, nginx]
     permissions:
       contents: read
       packages: write
@@ -82,23 +101,13 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          file: docker/php/Dockerfile
+          file: docker/${{ matrix.image }}/Dockerfile
           push: true
-          cache-from: type=gha,scope=php
-          cache-to: type=gha,mode=max,scope=php
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
           tags: |
-            ghcr.io/${{ steps.meta.outputs.repo }}/php:${{ steps.meta.outputs.tag }}
-            ghcr.io/${{ steps.meta.outputs.repo }}/php:latest
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/nginx/Dockerfile
-          push: true
-          cache-from: type=gha,scope=nginx
-          cache-to: type=gha,mode=max,scope=nginx
-          tags: |
-            ghcr.io/${{ steps.meta.outputs.repo }}/nginx:${{ steps.meta.outputs.tag }}
-            ghcr.io/${{ steps.meta.outputs.repo }}/nginx:latest
+            ghcr.io/${{ steps.meta.outputs.repo }}/${{ matrix.image }}:${{ steps.meta.outputs.tag }}
+            ghcr.io/${{ steps.meta.outputs.repo }}/${{ matrix.image }}:latest
     outputs:
       tag: ${{ steps.meta.outputs.tag }}
 
