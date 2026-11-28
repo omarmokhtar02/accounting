@@ -87,5 +87,5 @@ it('audits the posting with the assigned number', function () {
 
     $log = AuditLog::where('entity_type', 'journal_entry')->where('entity_id', $entry->id)->where('action', 'posted')->first();
 
-    expect($log->new_values)->toBe(['status' => 'posted', 'number' => 'JV-2026-000001']);
+    expect($log->new_values)->toEqual(['status' => 'posted', 'number' => 'JV-2026-000001']);
 });

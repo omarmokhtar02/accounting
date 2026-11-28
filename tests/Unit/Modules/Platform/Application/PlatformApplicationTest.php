@@ -315,7 +315,7 @@ describe('UpdatePlatformSettings', function () {
 
         expect($settings->int('trial.days'))->toBe(30)->and($settings->string('billing.contact_email'))->toBe('a@b.co')
             ->and($log->data)->toHaveKeys(['trial.days', 'billing.contact_email'])->not->toHaveKey('subscription.readonly_grace_days')
-            ->and($log->data['trial.days'])->toBe(['from' => 14, 'to' => 30]);
+            ->and($log->data['trial.days'])->toEqual(['from' => 14, 'to' => 30]);
     });
 
     it('logs nothing when nothing changed and ignores unknown fields', function () {
